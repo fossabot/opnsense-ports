@@ -2,8 +2,7 @@
 # $FreeBSD$
 
 PORTNAME=	bro
-PORTVERSION=	2.4.1
-PORTREVISION=	1
+PORTVERSION=	2.5
 CATEGORIES=	security
 MASTER_SITES=	http://www.bro.org/downloads/release/
 
@@ -18,7 +17,7 @@ BUILD_DEPENDS=	${LOCALBASE}/bin/bison:devel/bison \
 		${LOCALBASE}/bin/swig:devel/swig13
 LIB_DEPENDS=	libGeoIP.so:net/GeoIP
 
-USES=		cmake:outsource compiler:c++11-lang perl5 python ssl
+USES=		cmake:outsource compiler:c++11-lang gettext-runtime perl5 python ssl
 
 CMAKE_ARGS+=	-D PYTHON_EXECUTABLE:PATH=${PYTHON_CMD}
 CXXFLAGS+=	-std=c++11 -Wextra -Wall -pedantic
@@ -53,13 +52,12 @@ PLIST_SUB+=	BROUSER=${BROUSER} \
 USERS=		${BROUSER}
 GROUPS=		${BROGROUP}
 
-OPTIONS_DEFINE= BROCCOLI BROCTL BROKER DEBUG IPSUMDUMP LBL_CF LBL_HF PERFTOOLS
+OPTIONS_DEFINE= BROCCOLI BROCTL DEBUG IPSUMDUMP LBL_CF LBL_HF PERFTOOLS
 OPTIONS_DEFAULT=BROCCOLI BROCTL IPSUMDUMP LBL_CF LBL_HF
 OPTIONS_SUB=	yes
 
 BROCCOLI_DESC=	Build support for libbroccoli communications
 BROCTL_DESC=	BroControl support (implies BROCCOLI and IPSUMDUMP)
-BROKER_DESC=	Enable the Broker communication library
 IPSUMDUMP_DESC=	Enables traffic summaries
 LBL_CF_DESC=	Unix time to formated time/date filter support
 LBL_HF_DESC=	Address to hostname filter support
@@ -76,13 +74,16 @@ BROCTL_CMAKE_BOOL=	INSTALL_BROCTL
 BROCTL_USE=		LDCONFIG=yes
 IPSUMDUMP_BUILD_DEPENDS=ipsumdump:net/ipsumdump
 IPSUMDUMP_RUN_DEPENDS=	ipsumdump:net/ipsumdump
-BROKER_CMAKE_BOOL=	ENABLE_BROKER
-BROKER_BUILD_DEPENDS=	caf>=0.14.1:devel/caf
 DEBUG_CMAKE_BOOL=	ENABLE_DEBUG
 LBL_HF_RUN_DEPENDS=	${LOCALBASE}/bin/hf:sysutils/lbl-hf
 LBL_CF_RUN_DEPENDS=	${LOCALBASE}/bin/cf:sysutils/lbl-cf
 PERFTOOLS_CMAKE_BOOL=	ENABLE_PERFTOOLS
 PERFTOOLS_RUN_DEPENDS=	${LOCALBASE}/bin/pprof:devel/google-perftools
+
+post-install:
+	@${STRIP_CMD} ${STAGEDIR}${PREFIX}/bin/bro-cut
+	@cd ${STAGEDIR}${PREFIX}/share/broctl/scripts && \
+	    ${LN} -sfn ../../../spool/broctl-config.sh
 
 post-install-BROCTL-on:
 	@${MKDIR} ${STAGEDIR}${PREFIX}/logs
